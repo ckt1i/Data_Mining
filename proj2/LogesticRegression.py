@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 
 # Load the data
-def load_data():
-    data = pd.read_csv('proj2/DataSets/breast+cancer+wisconsin+diagnostic/wdbc.csv')
+def load_data(filepath):
+    data = pd.read_csv(filepath)
     X = data.iloc[:, 2:]  # 取每行从第三列开始的所有数据
     y = data.iloc[:,1]  # 取每行的第二列数据
     # Check lengths of X and y
@@ -31,12 +31,13 @@ def evaluate_model(model, X_test, y_test):
     return accuracy_score(y_test, y_pred)
 
 # Main function
-def main():
-    X, y = load_data()
+def train(filepath):
+    X, y = load_data(filepath)
     X_train, X_test, y_train, y_test = split_data(X, y)
     model = train_model(X_train, y_train)
     accuracy = evaluate_model(model, X_test, y_test)
     print(f'Accuracy: {accuracy}')
 
 if __name__ == '__main__':
-    main()
+    filepath = 'proj2/DataSets/breast+cancer+wisconsin+diagnostic/wdbc.csv'
+    train(filepath)
