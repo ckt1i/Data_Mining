@@ -103,7 +103,7 @@ def train(file_path, target_column):
     draw_figure(cm_DT, cm_NB , eval_DT , eval_NB)
 
 if __name__ == '__main__':
-    D1_path = ""
+    D1_path = "proj2\DataSets\heart+disease\processed.cleveland.csv"
     D2_path = "proj2\DataSets\iris\iris.csv"
 #    train(D1_path)
     train(D2_path , -1)
