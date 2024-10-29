@@ -37,7 +37,6 @@ def evaluate_model(model, X_test, y_test):
     F1_Measure = 2 * precesion * cm[0][0] / (precesion + cm[0][0])
     return cm , accuracy , recall , precesion , F1_Measure
 
-
 def draw_confusion_matrix(cm , modle_name):
     fig, ax = plt.subplots(figsize=(8, 6))
     cax = ax.matshow(cm, cmap=plt.cm.Blues)
@@ -48,18 +47,22 @@ def draw_confusion_matrix(cm , modle_name):
     plt.ylabel('Actual')
     plt.title('Confusion Matrix')
     plt.savefig(f'proj2/figs/CM_{modle_name}.png')
+    plt.close(fig)
 
-def draw_bar_chart(accuracy , recall , precesion , F1_Measure , modle_name):
-    labels = ['accuracy', 'recall', 'precesion', 'F1_Measure']
-    values = [accuracy , recall , precesion , F1_Measure]
-    ax = plt.subplots()
+def draw_bar_chart(accuracy, recall, precision, F1_Measure, model_name):
+    labels = ['accuracy', 'recall', 'precision', 'F1_Measure']
+    values = [accuracy, recall, precision, F1_Measure]
+    fig, ax = plt.subplots()  # 正确解包
     ax.bar(labels, values)
-    plt.savefig(f'proj2/figs/val_{modle_name}.png')
+    plt.xlabel('Metrics')
+    plt.ylabel('Values')
+    plt.title(f'{model_name} Performance Metrics')
+    plt.savefig(f'proj2/figs/val_{model_name}.png')
+    plt.close(fig)  # 关闭图形以释放内存
 
 def draw_figure(cm , accuracy , recall , precesion , F1_Measure):
     draw_confusion_matrix(cm , "LogesticRegression")
     draw_bar_chart(accuracy , recall , precesion , F1_Measure , "LogesticRegression")
-
 
 # Main function
 def train(filepath):
