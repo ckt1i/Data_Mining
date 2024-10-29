@@ -34,7 +34,7 @@ def evaluate_model(model, X_test, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     recall = cm[0][0] / (cm[0][0] + cm[1][0])
     precesion = cm[0][0] / (cm[0][0] + cm[0][1])
-    F1_Measure = 2 * precesion * cm[0][0] / (precesion + cm[0][0])
+    F1_Measure = precesion * cm[0][0] / (precesion + cm[0][0])
     return cm , accuracy , recall , precesion , F1_Measure
 
 def draw_confusion_matrix(cm , modle_name):
