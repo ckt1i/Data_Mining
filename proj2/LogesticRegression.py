@@ -1,6 +1,6 @@
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 import pandas as pd
 import numpy as np
 from sklearn.metrics import confusion_matrix
@@ -23,7 +23,7 @@ def split_data(X, y):
 
 # Train the model
 def train_model(X_train, y_train):
-    model = LogisticRegression()
+    model = LogisticRegression(solver='lbfgs', max_iter=1000)
     model.fit(X_train, y_train)
     return model
 
@@ -31,7 +31,7 @@ def train_model(X_train, y_train):
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred)
-    accuracy = accuracy_score(y_test, y_pred)
+    accuracy = (cm[0][0] + cm[1][1]) / (cm[0][0] + cm[0][1] + cm[1][0] + cm[1][1])
     recall = cm[0][0] / (cm[0][0] + cm[1][0])
     precesion = cm[0][0] / (cm[0][0] + cm[0][1])
     F1_Measure = precesion * cm[0][0] / (precesion + cm[0][0])
@@ -71,6 +71,8 @@ def train(filepath):
     model = train_model(X_train, y_train)
     cm , accuracy , recall , precesion , F1_Measure = evaluate_model(model, X_test, y_test)
     draw_figure(cm , accuracy , recall , precesion , F1_Measure)
+
+
 
 if __name__ == '__main__':
     filepath = 'proj2/DataSets/breast+cancer+wisconsin+diagnostic/wdbc.csv'

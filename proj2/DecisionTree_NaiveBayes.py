@@ -29,15 +29,28 @@ def train_model_NaiveBayes(X_train, y_train):
     model.fit(X_train, y_train)
     return model
 
+def calculate_item_matrix(cm):
+    recall = np.zeros(len(cm))
+    precession = np.zeros(len(cm))
+    F1_Measure = np.zeros(len(cm))
+    for i in range(len(cm)):
+        recall[i] = cm[i, i] / np.sum(cm[:, i])
+        precession[i] = cm[i, i] / np.sum(cm[i, :])
+        F1_Measure[i] = 2 * recall[i] * precession[i] / (recall[i] + precession[i])
+    return recall , precession , F1_Measure
+
 # Evaluate the model
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred)
     accuracy = accuracy_score(y_test, y_pred)
-    recall = cm[0][0] / (cm[0][0] + cm[1][0])
-    precesion = cm[0][0] / (cm[0][0] + cm[0][1])
-    F1_Measure = 2 * precesion * cm[0][0] / (precesion + cm[0][0])
-    evaluations = [accuracy , recall , precesion , F1_Measure]
+    recall , precesion , F1_Measure= calculate_item_matrix(cm)
+    macro_F1 = np.mean(F1_Measure)
+    micro_F1 = np.sum(cm.diagonal()) / np.sum(cm)
+    accur_mean = np.mean(accuracy)
+    recall_mean = np.mean(recall)
+    precesion_mean = np.mean(precesion)
+    evaluations = [accur_mean , recall_mean , precesion_mean , macro_F1 , micro_F1]
     return cm , evaluations
 
 def draw_confusion_matrix(cm , modle_name):
@@ -49,13 +62,13 @@ def draw_confusion_matrix(cm , modle_name):
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title('Confusion Matrix')
-    plt.savefig(f'proj2/figs/CM_{modle_name}.png')
+    plt.savefig(f'proj2/figs/{data}_CM_{modle_name}.png')
 
 def draw_figure(cm_DT, cm_NB , eval_DT , eval_NB):
-    draw_confusion_matrix(cm_DT , "NeuralNetwork")
+    draw_confusion_matrix(cm_DT , "DT")
     draw_confusion_matrix(cm_NB , "NB")
     
-    labels = ['accuracy', 'recall', 'precesion', 'F1_Measure']
+    labels = ['accuracy', 'recall', 'precesion', 'F1(macro)', 'F1(micro)']
     values_DT = eval_DT
     values_NB = eval_NB
     
@@ -89,7 +102,7 @@ def draw_figure(cm_DT, cm_NB , eval_DT , eval_NB):
 
     fig.tight_layout()
 
-    plt.savefig(f'proj2/figs/varcom_DTNB.png')
+    plt.savefig(f'proj2/figs/{data}_DTNB.png')
     
 
 def train(file_path, target_column):
@@ -102,8 +115,12 @@ def train(file_path, target_column):
     cm_NB , eval_NB = evaluate_model(model_NaiveBayes, X_test, y_test)
     draw_figure(cm_DT, cm_NB , eval_DT , eval_NB)
 
+data = "D1"
+
 if __name__ == '__main__':
-    D1_path = "proj2\DataSets\heart+disease\processed.cleveland.csv"
-    D2_path = "proj2\DataSets\iris\iris.csv"
-#    train(D1_path)
-    train(D2_path , -1)
+    D1_path = "proj2/DataSets/ObesityDataSet_raw_and_data_sinthetic.csv"
+    D2_path = "proj2/DataSets/iris/iris.csv"
+    if data == "D1":
+        train(D1_path, -1)
+    if data == "D2":
+        train(D2_path , -1)
