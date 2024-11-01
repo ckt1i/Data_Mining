@@ -75,5 +75,5 @@ def train(filepath):
 
 
 if __name__ == '__main__':
-    filepath = 'proj2/DataSets/breast+cancer+wisconsin+diagnostic/wdbc.csv'
+    filepath = 'proj2/DataSets/D4.csv'
     train(filepath)

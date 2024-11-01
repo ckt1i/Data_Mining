@@ -118,8 +118,8 @@ def train(file_path, target_column):
 data = "D1"
 
 if __name__ == '__main__':
-    D1_path = "proj2/DataSets/ObesityDataSet_raw_and_data_sinthetic.csv"
-    D2_path = "proj2/DataSets/iris/iris.csv"
+    D1_path = "proj2/DataSets/D1.csv"
+    D2_path = "proj2/DataSets/D2.csv"
     if data == "D1":
         train(D1_path, -1)
     if data == "D2":

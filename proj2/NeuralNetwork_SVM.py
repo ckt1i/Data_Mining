@@ -138,8 +138,8 @@ def train(file_path, target_column):
 data = "D3"
 
 if __name__ == '__main__':
-    D2_path = "proj2/DataSets/iris/iris.csv"
-    D3_path = "proj2/DataSets/wine+quality/winequality-red.csv"
+    D2_path = "proj2/DataSets/D2.csv"
+    D3_path = "proj2/DataSets/D3.csv"
 
     if data == "D2":
         train(D2_path, -1)
