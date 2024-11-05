@@ -3,21 +3,21 @@ from sklearn.mixture import GaussianMixture
 from matplotlib import pyplot as plt
 
 class K_means:
-    def __init__(self, k, max_iter=100):
-        self.k = k
+    def __init__(self, n_clusters, max_iter=100):
+        self.n_clusters = n_clusters
         self.max_iter = max_iter
 
     def fit(self, X):
         # Initialize centroids randomly
         X = np.array(X)
-        self.centroids = X[np.random.choice(range(X.shape[0]), self.k, replace=False)]
+        self.centroids = X[np.random.choice(range(X.shape[0]), self.n_clusters, replace=False)]
 
         for _ in range(self.max_iter):
             # Assign each data point to the closest centroid
             labels = np.argmin(np.linalg.norm(X[:, None] - self.centroids, axis=2), axis=1)
 
             # Update centroids
-            new_centroids = np.array([X[labels == i].mean(axis=0) for i in range(self.k)])
+            new_centroids = np.array([X[labels == i].mean(axis=0) for i in range(self.n_clusters)])
 
             # Check for convergence
             if np.all(self.centroids == new_centroids):
@@ -26,30 +26,22 @@ class K_means:
             self.centroids = new_centroids
 
         self.labels = labels
-        self.inertia = np.sum(np.linalg.norm(X[:, None] - self.centroids[labels], axis=2) ** 2)
-
+  
+            
 class EM:
-    def __init__(self, n_components, max_iter=100):
-        self.n_components = n_components
+    def __init__(self, n_clusters, max_iter=100):
+        self.n_clusters = n_clusters
         self.max_iter = max_iter
 
     def fit(self, X):
         # Initialize parameters randomly
         X = np.array(X)
 
-        self.model = GaussianMixture(n_components=self.n_components, max_iter=self.max_iter)
+        self.model = GaussianMixture(n_components=self.n_clusters, max_iter=self.max_iter)
         self.model.fit(X)
         self.labels = self.model.predict(X)
         self.centroids = self.model.means_
-        self.inertia = self.model.score(X)
 
-    def predict(self, X):
-        # Predict labels for new data
-        X = np.array(X)
-        if self.model is None:
-            raise ValueError("Model has not been fitted yet.")
-        labels = self.model.predict(X)
-        return labels
 
 class SpectualClustering:
     def __init__(self, n_clusters, KN=10):
@@ -61,8 +53,17 @@ class SpectualClustering:
         nn = NearestNeighbors(n_neighbors=self.KN)
         nn.fit(X)
         distances, indices = nn.kneighbors(X)
-        similarity_matrix = np.exp(-distances ** 2 / (2 * (np.mean(distances) ** 2)))
+
+        # Initialize a full similarity matrix with zeros
+        similarity_matrix = np.zeros((X.shape[0], X.shape[0]))
+        
+        # Fill the similarity matrix with the computed similarities
+        for i in range(X.shape[0]):
+            for j in range(self.KN):
+                similarity_matrix[i, indices[i, j]] = np.exp(-distances[i, j] ** 2 / (2 * (np.mean(distances) ** 2)))
+        
         return similarity_matrix
+    
 
     def fit(self, X):
         '''
@@ -94,55 +95,90 @@ class SpectualClustering:
         self.model = KMeans(n_clusters=self.n_clusters)
         clusters = self.model.fit(eigenvectors) # Assign labels to the data points
         self.labels = clusters.labels_
-        self.centroids = self.model.means_
-        self.inertia = self.model.score(X)
-
-    def predict(self, X):
-        if self.model is None:
-            raise ValueError("Model has not been fitted yet.")
-        labels = self.model.predict(X)
-        return labels
+       
+        self.centroids = self.model.cluster_centers_
+        
 
 class Evaluation:
-    def __init__(self, data, labels, centroids, new_data, new_labels):
+    def __init__(self, data, labels, centroids, true_labels=None , result_path = None, fig_path = None):
         self.data = data
         self.labels = labels
         self.centroids = centroids
-        self.new_data = new_data
-        self.new_labels = new_labels
+        self.true_labels = true_labels
+        self.result_path = result_path
+        self.fig_path = fig_path
 
-    def evaluate_NMI(self):
-        from sklearn.metrics import normalized_mutual_info_score
-        if len(self.labels) != len(self.new_labels):
-            raise ValueError(f"Inconsistent number of samples: {len(self.labels)} and {len(self.new_labels)}")
-        nmi = normalized_mutual_info_score(self.labels, self.new_labels)
-        return nmi
-
-    def evaluate_Silhouette(self):
-        from sklearn.metrics import silhouette_score
+    def evaluate(self):
+        from sklearn.metrics import normalized_mutual_info_score , silhouette_score
+        if self.true_labels is not None:
+            nmi = normalized_mutual_info_score(self.labels, self.true_labels)
         silhouette = silhouette_score(self.data, self.labels)
-        return silhouette
 
+        if self.result_path is not None:
+            with open(self.result_path, 'w') as file:
+                if self.true_labels is not None:
+                    file.write(f'NMI: {nmi}\n')
+                file.write(f'Silhouette: {silhouette}\n')
+        else:
+            if self.true_labels is not None:
+                print(f'NMI: {nmi}\n')
+            print(f'Silhouette: {silhouette}\n')
 
-def visualize(data, labels, centroids, new_data, new_labels):
-    # Visualize the data and the centroids
-    data = np.array(data)
-    centroids = np.array(centroids)
-    new_data = np.array(new_data)
+        return nmi , silhouette
+       
+    def visualize(self):
+        # Visualize the data and the centroids
+        data = np.array(self.data)
+        centroids = np.array(self.centroids)
 
-    # Using PCA to reduce the dimensionality of the data
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=2)
-    data_pca = pca.fit_transform(data)
-    centroids_pca = pca.transform(centroids)
-    new_data_pca = pca.transform(new_data)
+        # Using PCA to reduce the dimensionality of the data
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=2)
+        data_pca = pca.fit_transform(data)
+        centroids_pca = pca.transform(centroids)
 
-    # Plotting the data and the centroids
-    plt.scatter(data_pca[:, 0], data_pca[:, 1], c=labels, cmap='viridis')
-    plt.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c='red', marker='x')
-    plt.scatter(new_data_pca[:, 0], new_data_pca[:, 1], c=new_labels, cmap='viridis', marker='x')
-    plt.show()
-    
+        # Plotting the data and the centroids
+        if self.true_labels is not None:
+
+            from sklearn.preprocessing import LabelEncoder
+            # Encode the true labels
+            label_encoder = LabelEncoder()
+            true_labels_encoded = label_encoder.fit_transform(self.true_labels)
+            
+             # Define markers and colors
+            markers = ['o', 's', '^' , 'D', 'x', '*', '+', 'p', 'h', 'v']
+            colors = ['blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 'magenta']
+
+            # Plot the data points with shapes corresponding to true labels and colors corresponding to predicted labels
+            for i, label in enumerate(np.unique(true_labels_encoded)):
+                for j, pred_label in enumerate(np.unique(self.labels)):
+                    mask = (true_labels_encoded == label) & (self.labels == pred_label)
+                    plt.scatter(data_pca[mask, 0], data_pca[mask, 1],
+                                marker=markers[i], color=colors[j])
+            
+             # Add legend for true labels (shapes)
+            for i, label in enumerate(np.unique(true_labels_encoded)):
+                plt.scatter([], [], marker=markers[i], color='black', label=f'True {label_encoder.inverse_transform([label])[0]}')
+
+            # Add legend for predicted labels (colors)
+            for j, pred_label in enumerate(np.unique(self.labels)):
+                plt.scatter([], [], marker='o', color=colors[j], label=f'Pred {pred_label}')
+
+        else:
+            plt.scatter(data_pca[:, 0], data_pca[:, 1], c=self.labels, cmap='viridis')
+        
+        plt.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c='red', marker='x')
+        
+        plt.title('Cluster Visualization with PCA')
+        plt.xlabel('PCA Component 1')
+        plt.ylabel('PCA Component 2')
+        plt.legend()
+        
+        if self.fig_path is not None:
+            plt.savefig(self.fig_path)
+        else:
+            plt.show()
+
 
 # Example usage
 def main():
@@ -151,23 +187,18 @@ def main():
     X = np.random.randn(100, 2)
 
    # fit Spectual Clustering
-    sc = SpectualClustering(n_clusters=3)
-    sc.fit(X)
+    model = K_means(n_clusters=3)
 
-    # Predict labels for new data
-    new_labels = sc.predict(X)
-
-    # Visualize results
-    from matplotlib import pyplot as plt
-    plt.scatter(X[:, 0], X[:, 1], c=sc.labels, cmap='viridis')
-    plt.scatter(sc.centroids[:, 0], sc.centroids[:, 1], c='red', marker='x')
-    plt.scatter(X[:, 0], X[:, 1], c=new_labels, cmap='viridis', marker='x')
-    plt.show()
+   # Predict labels for new data
+    model.fit(X)
 
     # Evaluate the model
-    evaluation = Evaluation(X, sc.labels, sc.centroids, X, new_labels)
+    evaluation = Evaluation(X, model.labels, model.centroids)
     print("NMI:", evaluation.evaluate_NMI())
     print("Silhouette:", evaluation.evaluate_Silhouette())
+
+    # Visualize the results
+    evaluation.visualize()
 
 if __name__ == "__main__":
     main()
