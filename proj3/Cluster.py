@@ -95,8 +95,10 @@ class SpectualClustering:
         self.model = KMeans(n_clusters=self.n_clusters)
         clusters = self.model.fit(eigenvectors) # Assign labels to the data points
         self.labels = clusters.labels_
-       
-        self.centroids = self.model.cluster_centers_
+        '''
+        谱聚类不好直接得到中心点，因为谱聚类是基于图的，不是基于距离的，所以没有中心点的概念。
+        '''
+        self.centroids = None
         
 
 class Evaluation:
@@ -123,19 +125,17 @@ class Evaluation:
             if self.true_labels is not None:
                 print(f'NMI: {nmi}\n')
             print(f'Silhouette: {silhouette}\n')
-
-        return nmi , silhouette
        
     def visualize(self):
         # Visualize the data and the centroids
         data = np.array(self.data)
-        centroids = np.array(self.centroids)
 
         # Using PCA to reduce the dimensionality of the data
         from sklearn.decomposition import PCA
         pca = PCA(n_components=2)
         data_pca = pca.fit_transform(data)
-        centroids_pca = pca.transform(centroids)
+        if self.centroids is not None:
+            centroids_pca = pca.transform(self.centroids)
 
         # Plotting the data and the centroids
         if self.true_labels is not None:
@@ -167,7 +167,8 @@ class Evaluation:
         else:
             plt.scatter(data_pca[:, 0], data_pca[:, 1], c=self.labels, cmap='viridis')
         
-        plt.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c='red', marker='x')
+        if self.centroids is not None:
+            plt.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c='red', marker='x')
         
         plt.title('Cluster Visualization with PCA')
         plt.xlabel('PCA Component 1')
@@ -192,13 +193,11 @@ def main():
    # Predict labels for new data
     model.fit(X)
 
-    # Evaluate the model
+    # Visualize the data and the centroids
     evaluation = Evaluation(X, model.labels, model.centroids)
-    print("NMI:", evaluation.evaluate_NMI())
-    print("Silhouette:", evaluation.evaluate_Silhouette())
-
-    # Visualize the results
+    evaluation.evaluate()
     evaluation.visualize()
+
 
 if __name__ == "__main__":
     main()
