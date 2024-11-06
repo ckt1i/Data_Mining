@@ -126,16 +126,17 @@ class Evaluation:
                 print(f'NMI: {nmi}\n')
             print(f'Silhouette: {silhouette}\n')
        
-    def visualize(self):
+    def visualize(self , is_pca = True, show_centroids = False):
         # Visualize the data and the centroids
         data = np.array(self.data)
 
-        # Using PCA to reduce the dimensionality of the data
-        from sklearn.decomposition import PCA
-        pca = PCA(n_components=2)
-        data_pca = pca.fit_transform(data)
-        if self.centroids is not None:
-            centroids_pca = pca.transform(self.centroids)
+        if is_pca == False or data.shape[1] == 2:
+            # Using PCA to reduce the dimensionality of the data
+            from sklearn.decomposition import PCA
+            pca = PCA(n_components=2)
+            data = pca.fit_transform(data)
+            if self.centroids is not None:
+                centroids = pca.transform(self.centroids)
 
         # Plotting the data and the centroids
         if self.true_labels is not None:
@@ -146,14 +147,14 @@ class Evaluation:
             true_labels_encoded = label_encoder.fit_transform(self.true_labels)
             
              # Define markers and colors
-            markers = ['o', 's', '^' , 'D', 'x', '*', '+', 'p', 'h', 'v']
+            markers = ['o', 'D', 'x' , 'D', '^', '*', '+', 'p', 'h', 'v']
             colors = ['blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 'magenta']
 
             # Plot the data points with shapes corresponding to true labels and colors corresponding to predicted labels
             for i, label in enumerate(np.unique(true_labels_encoded)):
                 for j, pred_label in enumerate(np.unique(self.labels)):
                     mask = (true_labels_encoded == label) & (self.labels == pred_label)
-                    plt.scatter(data_pca[mask, 0], data_pca[mask, 1],
+                    plt.scatter(data[mask, 0], data[mask, 1],
                                 marker=markers[i], color=colors[j])
             
              # Add legend for true labels (shapes)
@@ -162,13 +163,13 @@ class Evaluation:
 
             # Add legend for predicted labels (colors)
             for j, pred_label in enumerate(np.unique(self.labels)):
-                plt.scatter([], [], marker='o', color=colors[j], label=f'Pred {pred_label}')
+                plt.scatter([], [], marker='o', color=colors[j], label=f'Pred {label_encoder.inverse_transform([pred_label])[0]}')
 
         else:
-            plt.scatter(data_pca[:, 0], data_pca[:, 1], c=self.labels, cmap='viridis')
+            plt.scatter(data[:, 0], data[:, 1], c=self.labels, cmap='viridis')
         
-        if self.centroids is not None:
-            plt.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c='red', marker='x')
+        if self.centroids is not None and show_centroids == True:
+            plt.scatter(centroids[:, 0], centroids[:, 1], c='red', marker='x')
         
         plt.title('Cluster Visualization with PCA')
         plt.xlabel('PCA Component 1')
