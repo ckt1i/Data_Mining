@@ -1,0 +1,2 @@
+the bert models is too large, so plz download it manually
+the model is in https://huggingface.co/deepset/bert-base-german-cased-sentiment-Germeval17
